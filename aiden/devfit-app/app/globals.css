@@ -1,0 +1,136 @@
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendard-dynamic-subset.min.css");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * DevFit — HP-inspired system (see DESIGN.md).
+ * 순백 캔버스, HP 블루 단일 시그널, 다크 슬랩, 블루 셰브론.
+ */
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  body {
+    background-color: #ffffff; /* canvas — 순백 */
+    color: #1a1a1a; /* ink */
+  }
+
+  ::selection {
+    background: rgba(2, 74, 216, 0.16); /* primary tint */
+  }
+
+  /* visible keyboard focus — HP blue ring */
+  *:focus-visible {
+    outline: 2px solid #024ad8;
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+}
+
+@layer components {
+  /* 구조 라벨(eyebrow) — 대문자 트래킹, 블루 시그널. HP는 단일 sans. */
+  .eyebrow {
+    @apply text-xs font-semibold uppercase tracking-button text-primary;
+  }
+
+  /* hairline rule */
+  .rule {
+    @apply border-hairline;
+  }
+
+  /* ── 버튼 (4px 샤프, 대문자 트래킹) ── */
+  .btn {
+    @apply inline-flex h-11 items-center justify-center rounded-md px-6 text-sm font-semibold uppercase tracking-button transition-colors disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply btn bg-primary text-white hover:bg-primary-deep;
+  }
+  .btn-ink {
+    @apply btn bg-ink text-white hover:bg-black;
+  }
+  .btn-outline {
+    @apply btn border border-primary bg-canvas text-primary hover:bg-primary/[0.06];
+  }
+  .btn-outline-ink {
+    @apply btn border border-ink bg-canvas text-ink hover:bg-ink/[0.04];
+  }
+
+  /* ── 카드 (16px 소프트, Soft Lift) ── */
+  .card {
+    @apply rounded-xl border border-hairline bg-canvas shadow-lift;
+  }
+
+  /* ── 표면 밴드 ── */
+  .surface-cloud {
+    @apply bg-cloud;
+  }
+  .slab {
+    @apply bg-ink text-white; /* 다크 네이비 슬랩 — 섹션 마감 */
+  }
+
+  /* ── 텍스트 입력 ── */
+  .input {
+    @apply h-11 rounded-md border border-steel bg-canvas px-4 text-base text-ink outline-none transition placeholder:text-graphite/70 focus:border-ink;
+  }
+
+  /* ── 시그니처: HP 블루 셰브론 ── */
+  /* 워드마크의 평행 슬래시를 키운 각진 블루 모티프. 히어로 전용, 카드 내 장식 금지. */
+  .chevron {
+    background-color: #024ad8;
+    clip-path: polygon(0 0, 55% 0, 100% 100%, 45% 100%);
+  }
+  .chevron-soft {
+    background-color: #c9e0fc;
+    clip-path: polygon(0 0, 55% 0, 100% 100%, 45% 100%);
+  }
+
+  /* ═══════ Airbnb(B2C) 유틸리티 — 따뜻한 소비자 톤, 매우 둥근 모서리 ═══════ */
+  .ab-eyebrow {
+    @apply text-xs font-bold uppercase tracking-[0.04em] text-rausch;
+  }
+  .ab-btn {
+    @apply inline-flex min-h-[48px] items-center justify-center rounded-[8px] px-6 text-base font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .ab-btn-primary {
+    @apply ab-btn bg-rausch text-white hover:bg-rausch-active;
+  }
+  .ab-btn-ghost {
+    @apply ab-btn border border-warmink/20 bg-white text-warmink hover:bg-warmsoft;
+  }
+  .ab-pill {
+    @apply inline-flex items-center rounded-full px-5 py-2.5 text-sm font-semibold transition-colors;
+  }
+  .ab-pill-primary {
+    @apply ab-pill bg-rausch text-white hover:bg-rausch-active;
+  }
+  .ab-card {
+    @apply rounded-[16px] bg-white;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.07);
+  }
+  .ab-card-outline {
+    @apply rounded-[16px] border border-warmline bg-white;
+  }
+  .ab-input {
+    @apply min-h-[56px] w-full rounded-full border border-warmline bg-white px-6 text-base text-warmink outline-none transition placeholder:text-warmmuted/70 focus:border-warmink;
+  }
+  .ab-chip {
+    @apply inline-flex items-center rounded-full border border-warmline bg-white px-4 py-2 text-sm font-medium text-warmbody transition-colors hover:border-warmink/40;
+  }
+  .ab-chip-active {
+    @apply border-warmink bg-warmink text-white hover:border-warmink;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

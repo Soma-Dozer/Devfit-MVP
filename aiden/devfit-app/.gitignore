@@ -1,0 +1,14 @@
+/node_modules
+/.next
+/out
+/build
+*.tsbuildinfo
+next-env.d.ts
+
+# local file DB (dev persistence)
+/.data
+
+# env — NEVER commit secrets
+.env
+.env.local
+.env*.local
