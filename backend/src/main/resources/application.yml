@@ -1,0 +1,32 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: gitproof-backend
+  config:
+    import: optional:file:.env[.properties]
+  datasource:
+    url: jdbc:h2:file:./data/gitproof;DB_CLOSE_DELAY=-1;AUTO_SERVER=TRUE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+  h2:
+    console:
+      enabled: true
+
+bedrock:
+  api-key: ${BEDROCK_API_KEY:}
+  region: ${BEDROCK_REGION:eu-north-1}
+  model-id: ${BEDROCK_MODEL_ID:openai.gpt-oss-120b-1:0}
+
+github:
+  token: ${GITHUB_TOKEN:}
+
+logging:
+  level:
+    com.gitproof: INFO
