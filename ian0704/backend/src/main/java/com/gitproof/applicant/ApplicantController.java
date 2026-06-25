@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 지원자용 엔드포인트: GitHub 포트폴리오 + 본인 코드 기반 면접 대비.
@@ -22,7 +21,6 @@ public class ApplicantController {
     private final GithubService github;
     private final BedrockService bedrock;
     private final PortfolioService portfolio;
-    private final Map<String, PrepResponse> prepCache = new ConcurrentHashMap<>();
 
     public ApplicantController(GithubService github, BedrockService bedrock, PortfolioService portfolio) {
         this.github = github;
@@ -65,9 +63,7 @@ public class ApplicantController {
         try {
             GithubService.Repo repo = github.parse(req.repoUrl());
             int max = req.maxSnippets() == null ? 5 : Math.max(1, Math.min(8, req.maxSnippets()));
-            String cacheKey = repo.full() + "#" + max;
-            PrepResponse hit = prepCache.get(cacheKey);
-            if (hit != null) return ResponseEntity.ok(hit);
+            // 캐시하지 않는다: 매번 중요한 후보군에서 랜덤 샘플링해 새 조각·질문을 생성.
 
             GithubService.RepoInfo repoInfo = github.fetchRepoInfo(repo);
             List<GithubService.Snippet> pool = github.extractSnippets(repo, max);
@@ -109,7 +105,6 @@ public class ApplicantController {
 
             PrepResponse resp = new PrepResponse(
                     repo.full(), repoInfo, topics, results.size(), results, warning);
-            if (warning == null) prepCache.put(cacheKey, resp);
             return ResponseEntity.ok(resp);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));

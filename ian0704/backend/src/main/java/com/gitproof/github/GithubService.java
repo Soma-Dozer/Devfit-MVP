@@ -11,6 +11,7 @@ import java.util.Base64;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * 퍼블릭 GitHub 레포에서 "의미 있는" 커밋의 Diff 스니펫을 추출한다.
@@ -259,8 +260,9 @@ public class GithubService {
         List<JsonNode> ordered = mine.isEmpty() ? all : mine;
         ordered.sort((a, b) -> Integer.compare(score(message(b)), score(message(a))));
 
-        // 상위 후보 커밋을 일정 개수만 상세 조회(레이트 리밋 보호)하여 후보 수집
-        int budget = Math.min(ordered.size(), Math.max(12, maxSnippets + 9));
+        // 상위 후보 커밋을 일정 개수만 상세 조회(레이트 리밋 보호)하여 후보 수집.
+        // 풀보다 넉넉히 모아 "중요한 후보군"을 크게 만든 뒤, 그 안에서 매번 랜덤 샘플링한다.
+        int budget = Math.min(ordered.size(), Math.max(18, maxSnippets + 12));
         List<Cand> cands = new ArrayList<>();
         int examined = 0;
         for (JsonNode c : ordered) {
@@ -287,29 +289,50 @@ public class GithubService {
 
         cands.sort((a, b) -> Integer.compare(b.score(), a.score()));
 
-        // 최종 N개가 아니라 "후보 풀"을 반환한다(파일 중복 없이).
-        // 이후 LLM이 이 풀에서 면접에 가장 유용한 핵심 조각을 선별한다.
-        int poolSize = Math.min(cands.size(), Math.max(6, maxSnippets * 2));
-        List<Snippet> out = new ArrayList<>();
+        // 파일 중복 없이 "중요한 후보 슈퍼셋"을 만든다(파일별 최고 품질 1개).
+        List<Cand> important = new ArrayList<>();
         Set<String> seenFiles = new HashSet<>();
         for (Cand cd : cands) {
-            if (out.size() >= poolSize) break;
             String fn = cd.file().path("filename").asText();
-            if (!seenFiles.add(fn)) continue;
-            out.add(toSnippet(cd.commit(), cd.file()));
-        }
-        for (Cand cd : cands) {
-            if (out.size() >= poolSize) break;
-            Snippet s = toSnippet(cd.commit(), cd.file());
-            boolean dup = out.stream().anyMatch(x ->
-                    x.commitSha().equals(s.commitSha()) && x.fileName().equals(s.fileName()));
-            if (!dup) out.add(s);
+            if (seenFiles.add(fn)) important.add(cd);
         }
 
-        if (out.isEmpty()) {
+        if (important.isEmpty()) {
             throw new IllegalStateException("분석할 만한 의미 있는 코드 변경을 찾지 못했습니다. (핵심 기능/버그픽스/리팩토링 커밋이 있는 레포로 시도해 주세요)");
         }
+
+        // 중요한 후보군 안에서 "매번 다르게" 품질 가중 랜덤 샘플링하여 풀을 구성한다.
+        // 품질이 높을수록 뽑힐 확률이 크지만 고정되지 않아, 호출마다 코드 조각이 달라진다.
+        int poolSize = Math.min(important.size(), Math.max(6, maxSnippets * 2));
+        List<Cand> sampled = weightedSample(important, poolSize);
+
+        List<Snippet> out = new ArrayList<>();
+        for (Cand cd : sampled) {
+            out.add(toSnippet(cd.commit(), cd.file()));
+        }
         return out;
+    }
+
+    /**
+     * 품질(quality)을 가중치로 한 비복원 랜덤 샘플링.
+     * 중요한 조각일수록 자주 뽑히되, 호출마다 결과가 달라져 매번 다른 코드 조각/질문이 나오게 한다.
+     */
+    private List<Cand> weightedSample(List<Cand> pool, int n) {
+        List<Cand> src = new ArrayList<>(pool);
+        List<Cand> picked = new ArrayList<>();
+        ThreadLocalRandom rnd = ThreadLocalRandom.current();
+        while (!src.isEmpty() && picked.size() < n) {
+            long total = 0;
+            for (Cand c : src) total += Math.max(1, c.score());
+            long r = (long) (rnd.nextDouble() * total);
+            int idx = src.size() - 1;
+            for (int i = 0; i < src.size(); i++) {
+                r -= Math.max(1, src.get(i).score());
+                if (r < 0) { idx = i; break; }
+            }
+            picked.add(src.remove(idx));
+        }
+        return picked;
     }
 
     /** 커밋이 레포 주인(당사자) 작성인지 — GitHub 연결 계정(author.login) 기준. */

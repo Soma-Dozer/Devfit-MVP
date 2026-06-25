@@ -10,7 +10,6 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.IntConsumer;
@@ -27,8 +26,8 @@ public class AnalysisController {
     private final GithubService github;
     private final BedrockService bedrock;
 
-    // 동일 레포의 완전 성공한 분석 결과를 캐시 → 재분석 시 GitHub/LLM 재호출 없이 즉시 반환.
-    private final Map<String, AnalyzeResponse> cache = new ConcurrentHashMap<>();
+    // 의도적으로 결과를 캐시하지 않는다: 매 분석마다 중요한 후보군에서 코드 조각을
+    // 랜덤 샘플링해 새로운 조각·질문을 생성하기 위함.
     private final ExecutorService executor = Executors.newCachedThreadPool();
 
     public AnalysisController(GithubService github, BedrockService bedrock) {
@@ -118,15 +117,6 @@ public class AnalysisController {
         GithubService.Repo repo = github.parse(repoUrl);
         int max = maxSnippets == null ? 5 : Math.max(1, Math.min(8, maxSnippets));
 
-        String cacheKey = repo.full() + "#" + max;
-        AnalyzeResponse hit = cache.get(cacheKey);
-        if (hit != null) {
-            onStageDone.accept(0);
-            onStageDone.accept(1);
-            onStageDone.accept(2);
-            return hit;
-        }
-
         // 1) 레포 정보 수집 (LLM 없이 항상 동작)
         GithubService.RepoInfo repoInfo = github.fetchRepoInfo(repo);
         onStageDone.accept(0);
@@ -177,10 +167,6 @@ public class AnalysisController {
         String repoSummary = batch != null ? batch.repoSummary() : null;
         AnalyzeResponse response = new AnalyzeResponse(
                 repo.full(), repoInfo, repoSummary, results.size(), results, warning);
-
-        if (warning == null) {
-            cache.put(cacheKey, response);
-        }
         return response;
     }
 }

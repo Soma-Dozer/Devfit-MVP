@@ -233,7 +233,7 @@ public class BedrockService {
                         "content", List.of(Map.of("text", prompt)))),
                 "inferenceConfig", Map.of(
                         "maxTokens", maxTokens,
-                        "temperature", 0.5)
+                        "temperature", 0.8)
         );
 
         String encoded = URLEncoder.encode(modelId, StandardCharsets.UTF_8);
