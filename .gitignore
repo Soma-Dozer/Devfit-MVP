@@ -1,24 +1,28 @@
-# ── secrets (NEVER commit) ──
+# ── secrets (NEVER commit) — 어느 깊이의 폴더든 적용 ──
 .env
 .env.*
 *.env
-backend/.env
-frontend/.env.local
+!.env.example
 
 # ── OS ──
 .DS_Store
 
-# ── backend (Gradle / Spring) ──
-backend/.gradle/
-backend/build/
-backend/data/
-*.log
+# ── Java / Gradle ──
+.gradle/
+build/
 
-# ── frontend (Next.js / Node) ──
-frontend/node_modules/
-frontend/.next/
-frontend/out/
-frontend/build/
-frontend/.vercel
+# ── H2 / 로컬 DB 데이터 (어느 깊이든) ──
+*.mv.db
+*.lock.db
+**/data/
+
+# ── Node / Next.js ──
+node_modules/
+.next/
+out/
+.vercel
 *.tsbuildinfo
 next-env.d.ts
+
+# ── logs ──
+*.log
